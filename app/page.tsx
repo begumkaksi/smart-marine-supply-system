@@ -7,6 +7,7 @@ import {
   MonthlyRequestsChart,
   SupplierPerformanceChart
 } from "@/components/charts";
+import { CurrentProcurementBatchCard } from "@/components/current-procurement-batch-card";
 import { MetricCard } from "@/components/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,6 +95,10 @@ export default function DashboardPage() {
         {kpis.map((kpi) => (
           <MetricCard key={kpi.label} {...kpi} />
         ))}
+      </section>
+
+      <section className="mt-6">
+        <CurrentProcurementBatchCard />
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">

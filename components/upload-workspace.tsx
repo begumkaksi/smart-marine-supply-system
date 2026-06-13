@@ -9,6 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  createManualBatch,
+  createUploadBatch,
+  generateDetectedItems,
+  storeBatch,
+  type SupplyItem
+} from "@/lib/procurement-batch";
 
 type ManualItem = {
   id: number;
@@ -18,12 +25,6 @@ type ManualItem = {
   port: string;
   priority: string;
 };
-
-const detectedItems = [
-  ["Fresh provisions", "Provisions", "420 kg", "Rotterdam", "High"],
-  ["Main engine filters", "Engine", "36 units", "Singapore", "Critical"],
-  ["Life raft service kit", "Safety", "12 kits", "Busan", "Medium"]
-];
 
 const initialManualItems: ManualItem[] = [
   { id: 1, itemName: "Fresh provisions", category: "Provisions", quantity: "420 kg", port: "Rotterdam", priority: "High" },
@@ -46,6 +47,7 @@ export function UploadWorkspace() {
   const { notify } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [batchItems, setBatchItems] = useState<SupplyItem[]>([]);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("Waiting for file");
   const [manualItems, setManualItems] = useState<ManualItem[]>(initialManualItems);
@@ -69,6 +71,14 @@ export function UploadWorkspace() {
       setProgress(Math.min(nextProgress, 100));
       if (nextProgress >= 100) {
         window.clearInterval(timer);
+        const items = generateDetectedItems(selectedFile.name);
+        const batch = createUploadBatch(
+          selectedFile.name,
+          selectedFile.type || selectedFile.name.split(".").pop()?.toUpperCase() || "Unknown",
+          items
+        );
+        setBatchItems(items);
+        storeBatch(batch);
         setStatus("Upload complete");
         notify("File uploaded successfully.");
       }
@@ -112,6 +122,19 @@ export function UploadWorkspace() {
   function analyzeList(message: string) {
     notify(message);
     router.push("/ai-analysis");
+  }
+
+  function analyzeManualList() {
+    const items = manualItems.map((item) => ({
+      item: item.itemName,
+      category: item.category,
+      quantity: item.quantity,
+      priority: item.priority,
+      port: item.port,
+      status: "Manual entry"
+    }));
+    storeBatch(createManualBatch(items));
+    analyzeList("Manual procurement batch saved for AI analysis.");
   }
 
   return (
@@ -232,11 +255,11 @@ export function UploadWorkspace() {
         <section className="mt-6">
           <Card className="glass-panel">
             <CardHeader>
-              <CardTitle>Mock Detected Items</CardTitle>
+              <CardTitle>Detected Supply List</CardTitle>
               <CardDescription>Detected from the uploaded supply list.</CardDescription>
             </CardHeader>
             <CardContent>
-              <DataTable rows={detectedItems} />
+              <DataTable rows={batchItems} />
             </CardContent>
           </Card>
         </section>
@@ -292,7 +315,7 @@ export function UploadWorkspace() {
                 </div>
               ))}
             </div>
-            <Button onClick={() => analyzeList("Manual list sent to AI analysis.")}>Analyze Manual List</Button>
+            <Button onClick={analyzeManualList}>Analyze Manual List</Button>
           </CardContent>
         </Card>
       </section>
@@ -300,21 +323,25 @@ export function UploadWorkspace() {
   );
 }
 
-function DataTable({ rows }: { rows: string[][] }) {
+function DataTable({ rows }: { rows: SupplyItem[] }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-white">
-      <div className="grid grid-cols-5 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <div className="grid grid-cols-6 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         <span>Item</span>
         <span>Category</span>
         <span>Quantity</span>
-        <span>Port</span>
         <span>Priority</span>
+        <span>Port</span>
+        <span>Status</span>
       </div>
       {rows.map((row) => (
-        <div key={row[0]} className="grid grid-cols-5 border-t px-4 py-3 text-sm">
-          {row.map((cell) => (
-            <span key={cell} className="truncate">{cell}</span>
-          ))}
+        <div key={`${row.item}-${row.port}`} className="grid grid-cols-6 border-t px-4 py-3 text-sm">
+          <span className="truncate font-semibold">{row.item}</span>
+          <span>{row.category}</span>
+          <span>{row.quantity}</span>
+          <span>{row.priority}</span>
+          <span>{row.port}</span>
+          <span className="truncate text-cyan-700">{row.status}</span>
         </div>
       ))}
     </div>

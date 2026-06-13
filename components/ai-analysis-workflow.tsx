@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BrainCircuit, CheckCircle2, Clock3, Database, ListChecks, Sparkles, UploadCloud } from "lucide-react";
 
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { getStoredBatch, storeBatch, type ProcurementBatch } from "@/lib/procurement-batch";
 
 const workflow = [
   { title: "Upload Supply List", icon: UploadCloud, note: "CSV, Excel, drag-and-drop, or manual entry." },
@@ -21,9 +22,14 @@ const workflow = [
 export function AiAnalysisWorkflow() {
   const router = useRouter();
   const { notify } = useToast();
+  const [batch, setBatch] = useState<ProcurementBatch | null>(null);
   const [running, setRunning] = useState(false);
   const [completedSteps, setCompletedSteps] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    setBatch(getStoredBatch());
+  }, []);
 
   function runAnalysis() {
     if (running) {
@@ -32,6 +38,11 @@ export function AiAnalysisWorkflow() {
     setRunning(true);
     setIsComplete(false);
     setCompletedSteps(0);
+    if (batch) {
+      const analyzingBatch: ProcurementBatch = { ...batch, analysisStatus: "Analyzing" };
+      setBatch(analyzingBatch);
+      storeBatch(analyzingBatch);
+    }
     notify("AI analysis started.");
 
     workflow.forEach((_, index) => {
@@ -40,6 +51,11 @@ export function AiAnalysisWorkflow() {
         if (index === workflow.length - 1) {
           setRunning(false);
           setIsComplete(true);
+          if (batch) {
+            const analyzedBatch: ProcurementBatch = { ...batch, analysisStatus: "Analyzed" };
+            setBatch(analyzedBatch);
+            storeBatch(analyzedBatch);
+          }
           notify("AI analysis completed.");
           notify("Supplier recommendation generated.");
         }
@@ -70,6 +86,50 @@ export function AiAnalysisWorkflow() {
             </Card>
           );
         })}
+      </section>
+
+      <section className="mt-6">
+        <Card className="glass-panel">
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Current Procurement Batch</CardTitle>
+              <CardDescription>
+                {batch
+                  ? `${batch.fileName} uploaded ${new Date(batch.uploadDate).toLocaleString()}`
+                  : "No uploaded supply list found yet."}
+              </CardDescription>
+            </div>
+            <Badge variant={batch ? "info" : "warning"}>{batch?.analysisStatus ?? "No batch"}</Badge>
+          </CardHeader>
+          <CardContent>
+            {batch ? (
+              <div className="overflow-hidden rounded-lg border bg-white">
+                <div className="grid grid-cols-6 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  <span>Item</span>
+                  <span>Category</span>
+                  <span>Quantity</span>
+                  <span>Priority</span>
+                  <span>Port</span>
+                  <span>Status</span>
+                </div>
+                {batch.detectedItems.map((item) => (
+                  <div key={`${item.item}-${item.port}`} className="grid grid-cols-6 border-t px-4 py-3 text-sm">
+                    <span className="truncate font-semibold">{item.item}</span>
+                    <span>{item.category}</span>
+                    <span>{item.quantity}</span>
+                    <span>{item.priority}</span>
+                    <span>{item.port}</span>
+                    <span className="text-cyan-700">{item.status}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border bg-white p-5 text-sm text-muted-foreground">
+                Upload a supply list first to analyze dynamic detected items.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -111,11 +171,11 @@ export function AiAnalysisWorkflow() {
             {isComplete ? (
               <>
                 {[
-                  ["Primary supplier", "Atlas Ship Chandlers"],
+                  ["Primary supplier", batch?.detectedItems.some((item) => item.category === "Safety") ? "Marisafe Technical" : "Atlas Ship Chandlers"],
                   ["Backup supplier", "NordPort Marine"],
-                  ["Expected saving", "23.8%"],
-                  ["Lead time reduction", "31%"],
-                  ["Risk posture", "Low"],
+                  ["Expected saving", `${Math.min(30, 16 + (batch?.detectedItems.length ?? 5) * 1.4).toFixed(1)}%`],
+                  ["Lead time reduction", `${Math.min(40, 21 + (batch?.detectedItems.length ?? 5) * 1.8).toFixed(1)}%`],
+                  ["Risk posture", batch?.detectedItems.some((item) => item.priority === "Critical") ? "Medium-Low" : "Low"],
                   ["Confidence score", "94%"]
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between rounded-lg border bg-white p-4 text-sm">
