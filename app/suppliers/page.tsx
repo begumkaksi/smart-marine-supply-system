@@ -1,10 +1,10 @@
-import { Anchor, Filter, MapPin, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Anchor, MapPin, ShieldCheck } from "lucide-react";
 
+import { ActionButton } from "@/components/action-button";
 import { AppShell } from "@/components/app-shell";
 import { SupplierScoreChart } from "@/components/charts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { pageSummaries, suppliers } from "@/lib/data";
@@ -18,16 +18,14 @@ export default function SuppliersPage() {
       <section className="mb-6 flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {["All ports", "Preferred", "Low risk", "Fast lead time"].map((filter) => (
-            <Button key={filter} variant="outline" size="sm">
-              <Filter className="h-4 w-4" />
+            <ActionButton key={filter} variant="outline" size="sm" iconName="filter" message={`${filter} supplier filter applied.`}>
               {filter}
-            </Button>
+            </ActionButton>
           ))}
         </div>
-        <Button>
-          <SlidersHorizontal className="h-4 w-4" />
+        <ActionButton iconName="sliders" href="/optimization" message="Opening AI scoring weights.">
           Scoring Weights
-        </Button>
+        </ActionButton>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

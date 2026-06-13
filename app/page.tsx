@@ -1,5 +1,6 @@
 import { Activity, AlertTriangle, CheckCircle2, Clock, Route } from "lucide-react";
 
+import { ActionButton } from "@/components/action-button";
 import { AppShell } from "@/components/app-shell";
 import {
   CostSavingsTrendChart,
@@ -8,7 +9,6 @@ import {
 } from "@/components/charts";
 import { MetricCard } from "@/components/metric-card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { kpis, purchaseOrders, routes } from "@/lib/data";
@@ -28,10 +28,25 @@ export default function DashboardPage() {
                 AI-driven supplier selection, demand prediction, and supply chain visibility for fleet procurement teams handling 5,200+ annual requests.
               </p>
             </div>
-            <Button variant="accent" className="w-full md:w-auto">
-              <CheckCircle2 className="h-4 w-4" />
-              Approve Batch
-            </Button>
+            <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-1">
+              <ActionButton
+                variant="accent"
+                className="w-full"
+                iconName="check"
+                message="Batch approved successfully."
+              >
+                Approve Batch
+              </ActionButton>
+              <ActionButton href="/upload" className="w-full" message="Opening supply list upload.">
+                Upload Supply List
+              </ActionButton>
+              <ActionButton href="/supplier-database" className="w-full" variant="outline">
+                View Suppliers
+              </ActionButton>
+              <ActionButton href="/report-generation" className="w-full" variant="outline">
+                Generate Report
+              </ActionButton>
+            </div>
           </div>
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
             {[

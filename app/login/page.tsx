@@ -1,11 +1,48 @@
-import Link from "next/link";
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Anchor, Eye, LockKeyhole, Mail, ShipWheel } from "lucide-react";
 
+import { useAuth, useToast } from "@/components/providers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { demoLogin, isAuthenticated, isReady, login } = useAuth();
+  const { notify } = useToast();
+  const [email, setEmail] = useState("demo@marineai.com");
+  const [password, setPassword] = useState("password123");
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isReady && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, isReady, router]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (login(email, password, remember)) {
+      notify("Login successful.");
+      router.push("/");
+      return;
+    }
+    setError("Invalid email or password.");
+    notify("Login failed. Use the demo credentials.");
+  }
+
+  function handleDemoLogin() {
+    setEmail("demo@marineai.com");
+    setPassword("password123");
+    demoLogin();
+    notify("Demo account loaded.");
+    router.push("/");
+  }
+
   return (
     <main className="min-h-screen bg-marine-navy text-white">
       <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
@@ -55,14 +92,15 @@ export default function LoginPage() {
               <CardDescription>Use your maritime procurement workspace credentials.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold">Email login</span>
                   <span className="flex items-center gap-2 rounded-md border bg-white px-3 py-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full bg-transparent text-sm outline-none"
-                      defaultValue="demo@marineai.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
                       type="email"
                       aria-label="Email"
                     />
@@ -74,7 +112,8 @@ export default function LoginPage() {
                     <LockKeyhole className="h-4 w-4 text-muted-foreground" />
                     <input
                       className="w-full bg-transparent text-sm outline-none"
-                      defaultValue="password123"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
                       type="password"
                       aria-label="Password"
                     />
@@ -83,15 +122,24 @@ export default function LoginPage() {
                 </label>
                 <div className="flex items-center justify-between gap-3">
                   <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <input defaultChecked type="checkbox" className="h-4 w-4 rounded border-input" />
+                    <input
+                      checked={remember}
+                      onChange={(event) => setRemember(event.target.checked)}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-input"
+                    />
                     Remember me
                   </label>
-                  <Link href="/" className="text-sm font-semibold text-cyan-700">
+                  <button type="button" onClick={handleDemoLogin} className="text-sm font-semibold text-cyan-700">
                     Demo account
-                  </Link>
+                  </button>
                 </div>
-                <Button asChild className="w-full">
-                  <Link href="/">Sign in to dashboard</Link>
+                {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+                <Button className="w-full" type="submit">
+                  Sign in to dashboard
+                </Button>
+                <Button className="w-full" type="button" variant="outline" onClick={handleDemoLogin}>
+                  Demo login
                 </Button>
               </form>
               <div className="mt-5 rounded-lg border bg-cyan-50 p-4 text-sm">

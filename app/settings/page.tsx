@@ -1,9 +1,9 @@
-import { DatabaseZap, LockKeyhole, PlugZap, SlidersHorizontal, Workflow } from "lucide-react";
+import { DatabaseZap, LockKeyhole, PlugZap, Workflow } from "lucide-react";
 
+import { ActionButton } from "@/components/action-button";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { pageSummaries } from "@/lib/data";
@@ -64,10 +64,9 @@ export default function SettingsPage() {
                 </div>
               );
             })}
-            <Button>
-              <SlidersHorizontal className="h-4 w-4" />
+            <ActionButton iconName="sliders" message="Approval and scoring rules saved.">
               Configure Rules
-            </Button>
+            </ActionButton>
           </CardContent>
         </Card>
       </section>

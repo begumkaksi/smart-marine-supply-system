@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bell, Command, Menu, Search, ShipWheel } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Bell, Command, LogOut, Menu, Search, ShipWheel } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { useAuth, useToast } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import { navItems } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -15,6 +17,31 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, isReady, logout } = useAuth();
+  const { notify } = useToast();
+
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, isReady, router]);
+
+  if (!isReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center marine-grid">
+        <div className="rounded-lg border bg-white p-5 text-sm font-semibold shadow-soft">Loading secure workspace...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center marine-grid">
+        <div className="rounded-lg border bg-white p-5 text-sm font-semibold shadow-soft">Redirecting to login...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen marine-grid">
@@ -71,7 +98,13 @@ export function AppShell({ children }: AppShellProps) {
       <div className="lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-white/70 bg-white/[0.82] backdrop-blur-xl">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              aria-label="Open navigation"
+              onClick={() => notify("Navigation menu is available in the sidebar on desktop.")}
+            >
               <Menu className="h-5 w-5" />
             </Button>
             <div className="hidden min-w-0 flex-1 items-center gap-3 rounded-lg border bg-white px-3 py-2 shadow-sm md:flex">
@@ -83,8 +116,20 @@ export function AppShell({ children }: AppShellProps) {
                 <Command className="h-3 w-3" /> K
               </kbd>
             </div>
-            <Button variant="outline" size="icon" aria-label="Notifications">
+            <Button variant="outline" size="icon" aria-label="Notifications" onClick={() => notify("No new procurement alerts.")}>
               <Bell className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Logout"
+              onClick={() => {
+                logout();
+                notify("Logged out successfully.");
+                router.push("/login");
+              }}
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold">Fleet Ops</p>

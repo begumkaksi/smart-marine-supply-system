@@ -1,10 +1,10 @@
-import { Download, FileText, PieChart, TrendingUp } from "lucide-react";
+import { FileText, PieChart, TrendingUp } from "lucide-react";
 
+import { ActionButton } from "@/components/action-button";
 import { AppShell } from "@/components/app-shell";
 import { CategorySpendChart, SavingsChart } from "@/components/charts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { pageSummaries } from "@/lib/data";
 
@@ -41,10 +41,14 @@ export default function ReportsPage() {
               <CardTitle>Executive Spend Report</CardTitle>
               <CardDescription>Baseline versus optimized procurement by month.</CardDescription>
             </div>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4" />
+            <ActionButton
+              variant="outline"
+              size="sm"
+              iconName="download"
+              message="Report exported successfully."
+            >
               Export
-            </Button>
+            </ActionButton>
           </CardHeader>
           <CardContent>
             <SavingsChart />
