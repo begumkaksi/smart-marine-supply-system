@@ -11,10 +11,18 @@ export type SupplierRecommendation = {
   item: string;
   recommendedSupplier: string;
   backupSupplier: string;
+  countryPort: string;
+  costScore: number;
+  deliveryTimeScore: number;
+  reliabilityScore: number;
+  stockAvailabilityScore: number;
+  overallScore: number;
   estimatedCost: string;
   deliveryTime: string;
   stockAvailability: string;
   riskLevel: string;
+  isRecommended: boolean;
+  reason: string;
 };
 
 export type ProcurementBatch = {
@@ -63,6 +71,114 @@ const supplierByCategory: Record<string, { primary: string; backup: string }> = 
   Provisions: { primary: "MedBlue Chandlers", backup: "Portside Provisions" },
   Cabin: { primary: "Iberia Ship Stores", backup: "OceanLink Stores" }
 };
+
+const supplierProfiles: Record<
+  string,
+  {
+    countryPort: string;
+    costScore: number;
+    deliveryTimeScore: number;
+    reliabilityScore: number;
+    stockAvailabilityScore: number;
+  }
+> = {
+  "Atlas Ship Chandlers": {
+    countryPort: "Singapore / Singapore",
+    costScore: 91,
+    deliveryTimeScore: 95,
+    reliabilityScore: 94,
+    stockAvailabilityScore: 92
+  },
+  "Bayline Technical": {
+    countryPort: "USA / Houston",
+    costScore: 86,
+    deliveryTimeScore: 84,
+    reliabilityScore: 89,
+    stockAvailabilityScore: 88
+  },
+  "Marisafe Technical": {
+    countryPort: "Belgium / Antwerp",
+    costScore: 85,
+    deliveryTimeScore: 88,
+    reliabilityScore: 93,
+    stockAvailabilityScore: 91
+  },
+  "Harborline Logistics": {
+    countryPort: "UAE / Jebel Ali",
+    costScore: 83,
+    deliveryTimeScore: 86,
+    reliabilityScore: 91,
+    stockAvailabilityScore: 89
+  },
+  "NordPort Marine": {
+    countryPort: "Netherlands / Rotterdam",
+    costScore: 92,
+    deliveryTimeScore: 90,
+    reliabilityScore: 96,
+    stockAvailabilityScore: 94
+  },
+  "Emirates Marine Hub": {
+    countryPort: "UAE / Abu Dhabi",
+    costScore: 87,
+    deliveryTimeScore: 87,
+    reliabilityScore: 90,
+    stockAvailabilityScore: 93
+  },
+  "MedBlue Chandlers": {
+    countryPort: "Spain / Valencia",
+    costScore: 90,
+    deliveryTimeScore: 89,
+    reliabilityScore: 90,
+    stockAvailabilityScore: 91
+  },
+  "Portside Provisions": {
+    countryPort: "USA / Los Angeles",
+    costScore: 84,
+    deliveryTimeScore: 86,
+    reliabilityScore: 86,
+    stockAvailabilityScore: 90
+  },
+  "Iberia Ship Stores": {
+    countryPort: "Portugal / Lisbon",
+    costScore: 88,
+    deliveryTimeScore: 87,
+    reliabilityScore: 88,
+    stockAvailabilityScore: 89
+  },
+  "OceanLink Stores": {
+    countryPort: "Germany / Hamburg",
+    costScore: 84,
+    deliveryTimeScore: 85,
+    reliabilityScore: 89,
+    stockAvailabilityScore: 82
+  }
+};
+
+function calculateOverallScore(profile: {
+  costScore: number;
+  deliveryTimeScore: number;
+  reliabilityScore: number;
+  stockAvailabilityScore: number;
+}) {
+  return Math.round(
+    profile.costScore * 0.4 +
+      profile.deliveryTimeScore * 0.25 +
+      profile.reliabilityScore * 0.2 +
+      profile.stockAvailabilityScore * 0.15
+  );
+}
+
+function getSupplierProfile(name: string) {
+  return (
+    supplierProfiles[name] ?? {
+      countryPort: "Global / Multi-port",
+      costScore: 84,
+      deliveryTimeScore: 84,
+      reliabilityScore: 86,
+      stockAvailabilityScore: 85
+    }
+  );
+}
 
 export function getStoredBatch() {
   if (typeof window === "undefined") {
@@ -122,15 +238,25 @@ export function createManualBatch(items: SupplyItem[]): ProcurementBatch {
 export function generateRecommendations(items: SupplyItem[]): SupplierRecommendation[] {
   return items.map((item, index) => {
     const supplier = supplierByCategory[item.category] ?? supplierByCategory.Engine;
+    const profile = getSupplierProfile(supplier.primary);
     const baseCost = 1200 + index * 340 + item.item.length * 18;
+    const overallScore = calculateOverallScore(profile);
     return {
       item: item.item,
       recommendedSupplier: supplier.primary,
       backupSupplier: supplier.backup,
+      countryPort: profile.countryPort,
+      costScore: profile.costScore,
+      deliveryTimeScore: profile.deliveryTimeScore,
+      reliabilityScore: profile.reliabilityScore,
+      stockAvailabilityScore: profile.stockAvailabilityScore,
+      overallScore,
       estimatedCost: `$${baseCost.toLocaleString()}`,
       deliveryTime: `${18 + (index % 5) * 4}h`,
       stockAvailability: index % 4 === 0 ? "Medium" : "High",
-      riskLevel: item.priority === "Critical" ? "Medium" : index % 5 === 0 ? "Low-Medium" : "Low"
+      riskLevel: item.priority === "Critical" ? "Medium" : index % 5 === 0 ? "Low-Medium" : "Low",
+      isRecommended: index === 0,
+      reason: `${supplier.primary} is recommended because it provides the best overall balance between cost, delivery time, reliability, and stock availability for ${item.category.toLowerCase()} items.`
     };
   });
 }
