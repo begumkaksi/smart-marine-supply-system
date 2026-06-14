@@ -43,9 +43,9 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className="fixed right-4 top-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
-        {toasts.map((toast) => (
+        {toasts.map((toast, index) => (
           <div
-            key={toast.id}
+            key={`${toast.id}-${index}`}
             className="rounded-lg border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-marine-navy shadow-soft"
           >
             {toast.message}
